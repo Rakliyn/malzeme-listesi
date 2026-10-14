@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Malzeme Listesi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #f5f5f5;
+    color: #222;
+    min-height: 100vh;
+    -webkit-text-size-adjust: 100%;
+  }
+  .container { max-width: 520px; margin: 0 auto; background: #fff; min-height: 100vh; }
+
+  /* Header */
+  .header {
+    position: sticky; top: 0; z-index: 20;
+    background: #fff;
+    padding: 16px 16px 12px;
+    border-bottom: 2px solid #eee;
+  }
+  .header-top {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 12px;
+  }
+  .header-title { font-size: 21px; font-weight: 800; color: #111; letter-spacing: -0.3px; }
+  .btn-clear {
+    background: none; border: 1.5px solid #e0e0e0; border-radius: 8px;
+    padding: 7px 14px; font-size: 13px; font-weight: 700;
+    color: #c62828; cursor: pointer; font-family: inherit;
+    transition: background 0.15s;
+  }
+  .btn-clear:active { background: #fef2f2; }
+
+  .search-box {
+    width: 100%; padding: 11px 14px; border-radius: 10px;
+    border: 1.5px solid #e8e8e8; font-size: 15px; outline: none;
+    background: #fafafa; font-family: inherit; color: #333;
+    transition: border-color 0.15s;
+  }
+  .search-box:focus { border-color: #bbb; background: #fff; }
+  .search-box::placeholder { color: #bbb; }
+
+  .stats {
+    margin-top: 10px; display: flex; justify-content: space-between;
+    font-size: 13px; font-weight: 600;
+  }
+  .stats-total { color: #999; }
+  .stats-bitti { color: #e53935; font-weight: 700; }
+
+  /* Category */
+  .cat-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 16px; cursor: pointer; user-select: none;
+    border-bottom: 1px solid #eee; transition: background 0.15s;
+  }
+  .cat-header.has-bitti { background: #fff5f5; }
+  .cat-header.ok { background: #f8f8f8; }
+  .cat-name { font-size: 15px; font-weight: 700; color: #222; }
+  .cat-status { font-size: 12px; font-weight: 700; }
+  .cat-status.red { color: #e53935; }
+  .cat-status.green { color: #999; }
+  .cat-arrow { font-size: 13px; margin-left: 4px; display: inline-block; transition: transform 0.15s; }
+  .cat-arrow.closed { transform: rotate(-90deg); }
+
+  /* Item row */
+  .item-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 11px 16px 11px 22px;
+    border-bottom: 1px solid #f3f3f3;
+    background: #fff; transition: background 0.15s;
+  }
+  .item-row.bitti { background: #fef2f2; }
+
+  .check-box {
+    width: 28px; height: 28px; border-radius: 7px; flex-shrink: 0;
+    border: 2px solid #ddd; background: #fff;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .check-box.active {
+    border: none; background: #e53935;
+  }
+  .check-box svg { display: none; }
+  .check-box.active svg { display: block; }
+
+  .item-name {
+    flex: 1; font-size: 15px; cursor: pointer; user-select: none;
+    min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    color: #333; font-weight: 400; transition: all 0.15s;
+  }
+  .item-name.bitti {
+    color: #d32f2f; font-weight: 700;
+  }
+  .bitti-badge {
+    display: none; margin-left: 6px; font-size: 10px; font-weight: 800;
+    background: #e53935; color: #fff; padding: 2px 6px; border-radius: 4px;
+    vertical-align: middle; letter-spacing: 0.5px; white-space: nowrap;
+  }
+  .item-name.bitti .bitti-badge { display: inline; }
+
+  /* Quantity */
+  .qty-wrap { display: flex; align-items: center; flex-shrink: 0; }
+  .qty-btn {
+    width: 34px; height: 34px; border: 1.5px solid #e0e0e0;
+    background: #f7f7f7; font-size: 18px; font-weight: 700;
+    color: #555; cursor: pointer; display: flex;
+    align-items: center; justify-content: center;
+    font-family: inherit; transition: background 0.1s;
+  }
+  .qty-btn:active { background: #eee; }
+  .qty-btn.minus { border-radius: 8px 0 0 8px; border-right: none; }
+  .qty-btn.plus { border-radius: 0 8px 8px 0; border-left: none; }
+  .qty-input {
+    width: 42px; height: 34px; text-align: center;
+    border: 1.5px solid #e0e0e0; border-left: none; border-right: none;
+    font-size: 14px; font-weight: 700; outline: none;
+    background: #fff; color: #333; font-family: inherit; padding: 0;
+  }
+  .qty-input.has-val { background: #fff8e1; }
+  .qty-input::placeholder { color: #ccc; font-weight: 400; }
+
+  .items-container { display: none; }
+  .items-container.open { display: block; }
+
+  .empty-msg {
+    padding: 40px 20px; text-align: center;
+    color: #ccc; font-size: 14px; font-weight: 500;
+  }
+
+  @media (max-width: 380px) {
+    .item-name { font-size: 14px; }
+    .qty-btn { width: 30px; height: 30px; font-size: 16px; }
+    .qty-input { width: 36px; height: 30px; font-size: 13px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container" id="app">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-top">
+      <div class="header-title">📋 Malzeme Listesi</div>
+      <button class="btn-clear" onclick="clearAll()">Temizle</button>
+    </div>
+    <input class="search-box" type="text" placeholder="🔍 Ürün ara..." oninput="onSearch(this.value)" id="searchInput">
+    <div class="stats">
+      <span class="stats-total" id="statsTotal">Toplam: 0 ürün</span>
+      <span class="stats-bitti" id="statsBitti"></span>
+    </div>
+  </div>
+
+  <!-- List -->
+  <div id="listContainer"></div>
+</div>
+
+<script>
+const CATEGORIES = [
+  { name: "🍟 Frituur", items: ["Patat","Twister Patat","Wedges Patat","Chicken Strips","Hot Chicken Strips","Chicken Sandwich","Hot Spicy Burger","Hotwings","Kip Nuggets","Actie Kip Nuggets","Hakan Burger","Chicken Fries","Fish Burger","Veggie Burger","Veggie Chicken Burger","Rosti","Falafel","Mozarella Sticks","Chili Cheese Nuggets","Ui Rings","Kipcorn","Doritos Chips"] },
+  { name: "🔥 Grillplaat", items: ["Hamburger","Lams Shoarma","Kip Shoarma","Ei","Sucuk","Doner","Kip Doner","Kalfs Doner"] },
+  { name: "🍞 Brood", items: ["Dönerbroodje","Wrap","Burgerbroodje"] },
+  { name: "🥗 Salades", items: ["Komkommer","Tomaat","Sla","Ui","Rode Kool","Witte Kool","Mais","Wortel","Augurk","Jalepeno","Olijven","Kikkererwt","Rucola","Bosui","Sesam","Gebakken Ui","Cherry Tomaat","Parmesan","Cheddar","Kaas"] },
+  { name: "🫙 Sauzen", items: ["Mayonaise","Ketchup","Curry","Andalous","Zinger Saus","Knoflook Saus","Sambal","Samurai","Tartar Saus","Mostard Saus","Joppie","Barbecue","Katjang","Chili Saus","American Saus","Cocktail Saus","Cheddar Saus","Sweet Sour","Truffel Mayo","Fire Saus","Tokyo Saus","Sriracha Saus","Pinda Saus","Knoflook Poeder","Peterselieblad"] },
+  { name: "📦 Verpakkingen", items: ["Servet","Plastic Tas","ThuisBezorgd Tas","Vork","Saladebak / Deksel","Grote Bowlbak / Deksel","Kleine Bowlbak / Deksel","Sausbak (Meenemen)","Sausbak (Hier opeten)","Patatbak A7 (Klein)","Patatbak A23 (Klein + Saus)","Patatbak A9 (Groot)","Patatbak A22 (Groot + Saus)","Kartonbak A7 (Klein)","Kartonbak A9 (Medium)","Kartonbak A14 (Groot)","Klein Kapsalonbak","Groot Kapsalonbak","Patatzakje","Klein Bucket / Deksel","Grote Bucket / Deksel","Donerbox","FrituurOlie","Rietje"] },
+  { name: "🥤 Milkshake & IJs", items: ["Vanille Milkshake","Chocolade Milkshake","Caramel Milkshake","Aardbei Milkshake","M&M","Slagroom","Choco Saus","Milkshake Deksel","Milkshake Rietje","Aardbei Ijs","Blueberry Sorbet Ijs","Brownie Vanille Ijs","Coffee Bliss Ijs","Bosvruchten Yoghurt Ijs","Chocolade Ijs","Chocolade Vanille Ijs","Pistache Ijs","Banaan Ijs","Vanille Ijs","Rainbow Candy Ijs","Lemon Ijs","Ijs Beker","Hoorntje"] },
+  { name: "☕ Koffie", items: ["IjsKoffie","Koffiebon","Koffie Beker","Melkpoeder","Chocoladepoeder","Suiker","Cookie","Melkcupje","Roerstaafje"] },
+  { name: "🧃 Dranken", items: ["Cola","Cola Zero","Cola Vanille","Cola Cherry","Cola Zero Zero","Cola 550ml","Cola Zero 500ml","Pepsi","Pepsi Zero","Pepsi 550ml","Pepsi Zero 500ml","Fanta","Fanta Lemon","Fanta Kiwi","Fanta Cassis","Fanta Exotic","Fanta 500ml","Sprite","Sprite Zero","Spa Blauw","Chaudfontaine","Munzur Su","Spa Rood","Lipton Peach","Lipton Groen","Fuse Tea Peach","Fuse Tea Groen","Fuse Tea 500ml","7up","Sisi Tropical","Hawai Tropical","AA","Poms","Oasis Pomme Cassis","Oasis Aardbei","Oasis Pomme Poire","Oasis Tropical","Fernandes Cherry Bouquet","Fernandes Red Grape","Fernandes Cream Ginger","Fernandes Green Punch","Fernandes Super Pineapple","Maaza Tropical","Maaza Mango","Minute Maid Oranje","Minute Maid Apple","Minute Maid Apple Nectar","Royale Club Tonic","Royale Club Cassis","Sourcy Vitamin Mango Guave","Sourcy Vitamin Limoen Lychee","Sourcy Vitamin Framboos Granaatappel","Sourcy Vitamin Druif Citroen","Nescafe Latte","Nescafe Cappuccino","Monster Energy","Monster Ultra White Zero","Monster VR46","Monster Mango Loco","Redbull","Redbull Suikervrij","Slammers","Golden Power","Powerade Oranje","Powerade Blauw","Viking Energie","CapriSun","Ayran","Chocomel","Fristi"] }
+];
+
+const STORAGE_KEY = "malzeme_data_v1";
+let data = {};
+let collapsedCats = {};
+let searchQuery = "";
+
+function load() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) data = JSON.parse(raw);
+  } catch(e) {}
+}
+
+function save() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
+}
+
+function slugify(s) { return s.replace(/[^a-zA-Z0-9]/g, '_'); }
+
+function toggleBitti(item) {
+  if (!data[item]) data[item] = { bitti: false, qty: "" };
+  data[item].bitti = !data[item].bitti;
+  save();
+  renderItem(item);
+  updateCatHeader(item);
+  updateStats();
+}
+
+function setQty(item, val) {
+  if (!data[item]) data[item] = { bitti: false, qty: "" };
+  data[item].qty = val;
+  save();
+  const inp = document.getElementById("qty_" + slugify(item));
+  if (inp) {
+    inp.value = val;
+    inp.className = "qty-input" + (val ? " has-val" : "");
+  }
+}
+
+function changeQty(item, delta) {
+  if (!data[item]) data[item] = { bitti: false, qty: "" };
+  let cur = parseInt(data[item].qty) || 0;
+  cur += delta;
+  if (cur < 0) cur = 0;
+  setQty(item, cur === 0 ? "" : String(cur));
+}
+
+function renderItem(item) {
+  const info = data[item] || { bitti: false, qty: "" };
+  const row = document.getElementById("row_" + slugify(item));
+  if (!row) return;
+  row.className = "item-row" + (info.bitti ? " bitti" : "");
+  const cb = row.querySelector(".check-box");
+  cb.className = "check-box" + (info.bitti ? " active" : "");
+  const nm = row.querySelector(".item-name");
+  nm.className = "item-name" + (info.bitti ? " bitti" : "");
+}
+
+function findCatForItem(item) {
+  for (const cat of CATEGORIES) {
+    if (cat.items.includes(item)) return cat;
+  }
+  return null;
+}
+
+function updateCatHeader(item) {
+  const cat = findCatForItem(item);
+  if (!cat) return;
+  const slug = slugify(cat.name);
+  const header = document.getElementById("cat_" + slug);
+  if (!header) return;
+  const bittiCount = cat.items.filter(i => data[i] && data[i].bitti).length;
+  header.className = "cat-header " + (bittiCount > 0 ? "has-bitti" : "ok");
+  const status = header.querySelector(".cat-status");
+  if (bittiCount > 0) {
+    status.className = "cat-status red";
+    status.textContent = bittiCount + " bitti";
+  } else {
+    status.className = "cat-status green";
+    status.textContent = "OK";
+  }
+}
+
+function updateStats() {
+  const total = CATEGORIES.reduce((s, c) => s + c.items.length, 0);
+  const bitti = Object.values(data).filter(d => d.bitti).length;
+  document.getElementById("statsTotal").textContent = "Toplam: " + total + " ürün";
+  const el = document.getElementById("statsBitti");
+  if (bitti > 0) {
+    el.textContent = "⚠️ " + bitti + " ürün bitti";
+    el.style.display = "";
+  } else {
+    el.textContent = "";
+    el.style.display = "none";
+  }
+}
+
+function toggleCat(catName) {
+  collapsedCats[catName] = !collapsedCats[catName];
+  const slug = slugify(catName);
+  const container = document.getElementById("items_" + slug);
+  const arrow = document.getElementById("arrow_" + slug);
+  if (container) {
+    container.className = "items-container" + (collapsedCats[catName] && !searchQuery ? "" : " open");
+  }
+  if (arrow) {
+    arrow.className = "cat-arrow" + (collapsedCats[catName] && !searchQuery ? " closed" : "");
+  }
+}
+
+function onSearch(val) {
+  searchQuery = val.toLowerCase().trim();
+  renderList();
+}
+
+function clearAll() {
+  if (!confirm("Tüm verileri temizlemek istediğinizden emin misiniz?")) return;
+  data = {};
+  save();
+  renderList();
+}
+
+function createItemHTML(item) {
+  const info = data[item] || { bitti: false, qty: "" };
+  const slug = slugify(item);
+  const isBitti = info.bitti;
+  return `
+    <div class="item-row${isBitti ? ' bitti' : ''}" id="row_${slug}">
+      <div class="check-box${isBitti ? ' active' : ''}" onclick="toggleBitti('${item.replace(/'/g, "\\'")}')">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <path d="M3 3L11 11M11 3L3 11" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="item-name${isBitti ? ' bitti' : ''}" onclick="toggleBitti('${item.replace(/'/g, "\\'")}')">
+        ${item}<span class="bitti-badge">BİTTİ</span>
+      </div>
+      <div class="qty-wrap">
+        <button class="qty-btn minus" onclick="changeQty('${item.replace(/'/g, "\\'")}', -1)">−</button>
+        <input class="qty-input${info.qty ? ' has-val' : ''}" id="qty_${slug}" type="text" inputmode="numeric" pattern="[0-9]*"
+          value="${info.qty}" placeholder="0"
+          onchange="setQty('${item.replace(/'/g, "\\'")}', this.value.replace(/[^0-9]/g,''))">
+        <button class="qty-btn plus" onclick="changeQty('${item.replace(/'/g, "\\'")}', 1)">+</button>
+      </div>
+    </div>`;
+}
+
+function renderList() {
+  const container = document.getElementById("listContainer");
+  let html = "";
+
+  for (const cat of CATEGORIES) {
+    const filtered = searchQuery
+      ? cat.items.filter(i => i.toLowerCase().includes(searchQuery))
+      : cat.items;
+    if (searchQuery && filtered.length === 0) continue;
+
+    const slug = slugify(cat.name);
+    const bittiCount = cat.items.filter(i => data[i] && data[i].bitti).length;
+    const isOpen = !collapsedCats[cat.name] || searchQuery;
+
+    html += `
+      <div class="cat-header ${bittiCount > 0 ? 'has-bitti' : 'ok'}" id="cat_${slug}" onclick="toggleCat('${cat.name.replace(/'/g, "\\'")}')">
+        <span class="cat-name">${cat.name}</span>
+        <span>
+          <span class="cat-status ${bittiCount > 0 ? 'red' : 'green'}">${bittiCount > 0 ? bittiCount + ' bitti' : 'OK'}</span>
+          <span class="cat-arrow${isOpen ? '' : ' closed'}" id="arrow_${slug}">▾</span>
+        </span>
+      </div>
+      <div class="items-container${isOpen ? ' open' : ''}" id="items_${slug}">
+        ${filtered.map(item => createItemHTML(item)).join('')}
+      </div>`;
+  }
+
+  if (!html) {
+    html = '<div class="empty-msg">Sonuç bulunamadı</div>';
+  }
+
+  container.innerHTML = html;
+  updateStats();
+}
+
+// Init
+load();
+renderList();
+</script>
+</body>
+</html>
